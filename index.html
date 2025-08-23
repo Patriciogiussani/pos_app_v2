@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>POS Almacén — Gestión de Ventas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark">
+  <div class="app">
+    <!-- Sidebar / Topbar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo-placeholder" title="Colocá aquí tu logo">LOGO</div>
+        <h1 id="storeNameHeading">Mi Almacén</h1>
+      </div>
+      <nav class="menu">
+        <button class="nav-btn" data-target="dashboard"><span>🏠</span> Inicio</button>
+        <button class="nav-btn" data-target="productos"><span>📦</span> Productos</button>
+        <button class="nav-btn" data-target="ventas"><span>🧾</span> Ventas</button>
+        <button class="nav-btn" data-target="clientes"><span>👤</span> Clientes</button>
+        <button class="nav-btn" data-target="reportes"><span>📈</span> Reportes</button>
+        <button class="nav-btn" data-target="config"><span>⚙️</span> Configuración</button>
+      </nav>
+      <button id="btnToggleTheme" class="secondary" style="margin-top:20px;">🌓 Cambiar tema</button>
+    </aside>
+
+    <main class="content">
+      <!-- Dashboard -->
+      <section id="dashboard" class="screen active">
+        <header class="screen-header">
+          <h2>Panel de Control</h2>
+          <div class="actions">
+            <button id="btnVentaRapida" class="primary">⚡ Venta rápida</button>
+          </div>
+        </header>
+        <div id="stockAlert" class="alert hidden">⚠️ Hay productos con stock en mínimo o por debajo.</div>
+        <div class="cards">
+          <div class="card stat">
+            <div>Ventas de hoy</div>
+            <strong id="statHoy">$0,00</strong>
+          </div>
+          <div class="card stat">
+            <div>Total del mes</div>
+            <strong id="statMes">$0,00</strong>
+          </div>
+          <div class="card stat">
+            <div>Producto más vendido (mes)</div>
+            <strong id="statTop">—</strong>
+          </div>
+          <div class="card stat">
+            <div>Tickets del mes</div>
+            <strong id="statTickets">0</strong>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="panel">
+            <h3 style="margin-top:0">Stock crítico</h3>
+            <div class="table-wrap">
+              <table class="table" id="tablaCritico">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Stock</th>
+                    <th>Mín.</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <h3 style="margin-top:0">Ventas últimos 7 días</h3>
+            <canvas id="chart7d" width="600" height="280"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Productos -->
+      <section id="productos" class="screen">
+        <header class="screen-header">
+          <h2>Productos</h2>
+          <div class="actions">
+            <input id="buscarProductos" class="searchbox" placeholder="🔎 Buscar..." />
+            <button id="btnNuevoProducto" class="primary">+ Nuevo</button>
+          </div>
+        </header>
+
+        <div class="table-wrap">
+          <table class="table sortable" id="tablaProductos" data-sort-key="descripcion" data-sort-dir="asc">
+            <thead>
+              <tr>
+                <th data-key="imagen">Imagen</th>
+                <th data-key="codigo">Código</th>
+                <th data-key="descripcion">Descripción</th>
+                <th data-key="precioCompra" class="num">Precio Compra</th>
+                <th data-key="precioVenta" class="num">Precio Venta</th>
+                <th data-key="stock" class="num">Stock</th>
+                <th data-key="stockMin" class="num">Mín.</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Ventas -->
+      <section id="ventas" class="screen">
+        <header class="screen-header">
+          <h2>Ventas</h2>
+        </header>
+
+        <div class="ventas-grid">
+          <div class="ventas-left">
+            <div class="search">
+              <input id="buscadorProducto" type="text" placeholder="Buscar por nombre o código de barras" />
+              <div id="sugerencias" class="sugerencias"></div>
+            </div>
+            <div class="add-to-cart">
+              <input id="cantidadAgregar" type="number" min="1" value="1" />
+              <button id="btnAgregarCarrito" class="primary">Agregar</button>
+            </div>
+
+            <div class="table-wrap">
+              <table class="table" id="tablaCarrito">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th>Cant.</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="ventas-right">
+            <div class="panel">
+              <label>Cliente</label>
+              <select id="clienteVenta"></select>
+              <label class="mt8">Cajero</label>
+              <div class="row gap">
+                <select id="cajeroVenta" class="flex1"></select>
+                <input id="nuevoCajero" placeholder="Nuevo cajero" />
+                <button id="btnAddCajero" class="secondary">+ Añadir</button>
+              </div>
+            </div>
+            <div class="panel total">
+              <div class="row">
+                <span>Total:</span>
+                <strong id="totalVenta">$0.00</strong>
+              </div>
+              <label>Monto entregado</label>
+              <input id="montoEntregado" type="number" min="0" step="0.01" />
+              <div class="row">
+                <span>Vuelto:</span>
+                <strong id="vuelto">$0.00</strong>
+              </div>
+              <button id="btnConfirmarVenta" class="success">Confirmar venta</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Clientes -->
+      <section id="clientes" class="screen">
+        <header class="screen-header">
+          <h2>Clientes</h2>
+          <div class="actions">
+            <input id="buscarClientes" class="searchbox" placeholder="🔎 Buscar..." />
+            <button id="btnNuevoCliente" class="primary">+ Nuevo</button>
+          </div>
+        </header>
+
+        <div class="table-wrap">
+          <table class="table sortable" id="tablaClientes" data-sort-key="nombre" data-sort-dir="asc">
+            <thead>
+              <tr>
+                <th data-key="nombre">Nombre</th>
+                <th data-key="telefono">Teléfono</th>
+                <th>Historial</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Reportes -->
+      <section id="reportes" class="screen">
+        <header class="screen-header">
+          <h2>Reportes</h2>
+          <div class="actions">
+            <button id="btnExportarVentas" class="secondary">CSV</button>
+            <button id="btnExportarXLS" class="secondary">Excel</button>
+            <button id="btnExportarPDF" class="secondary">PDF</button>
+          </div>
+        </header>
+        <div class="filters row gap mb8">
+          <label>Desde <input type="date" id="desdeFecha" /></label>
+          <label>Hasta <input type="date" id="hastaFecha" /></label>
+          <button id="btnFiltrarReportes" class="primary">Filtrar</button>
+        </div>
+
+        <div class="panel total">
+          <div class="row">
+            <span>Ventas:</span><strong id="cantidadVentas">0</strong>
+          </div>
+          <div class="row">
+            <span>Monto acumulado:</span><strong id="montoAcumulado">$0.00</strong>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" id="tablaReportes">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Cajero</th>
+                <th>Total</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Configuración -->
+      <section id="config" class="screen">
+        <header class="screen-header">
+          <h2>Configuración & Backup</h2>
+        </header>
+
+        <div class="config-grid">
+          <div class="panel">
+            <label>Nombre del comercio</label>
+            <input id="nombreComercio" type="text" placeholder="Ej: Almacén Patricio" />
+            <button id="btnGuardarConfig" class="primary">Guardar</button>
+          </div>
+
+          <div class="panel">
+            <label>Cajeros</label>
+            <div class="row gap">
+              <input id="nuevoCajero2" placeholder="Nombre de cajero" />
+              <button id="btnAddCajero2" class="secondary">+ Agregar</button>
+            </div>
+            <small id="listaCajeros" class="muted"></small>
+          </div>
+
+          <div class="panel">
+            <label>Exportar/Importar datos (JSON)</label>
+            <div class="row gap">
+              <button id="btnExportar" class="secondary">Exportar</button>
+              <label class="file">
+                <input type="file" id="fileImport" accept="application/json" />
+                <span>Importar</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel danger">
+            <p><strong>Reset total</strong> (borra LocalStorage)</p>
+            <button id="btnReset" class="danger">Borrar todo</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast / popup -->
+  <div id="toast" class="toast hidden">✅ Venta registrada</div>
+
+  <!-- Modal Producto -->
+  <dialog id="modalProducto">
+    <form method="dialog" class="modal-form" id="formProducto">
+      <h3>Producto</h3>
+      <div class="grid">
+        <label>Código de barras (opcional)
+          <input type="text" id="pCodigo" />
+        </label>
+        <label>Descripción
+          <input type="text" id="pDescripcion" required />
+        </label>
+        <label>Precio compra
+          <input type="number" id="pPrecioCompra" min="0" step="0.01" required />
+        </label>
+        <label>Precio venta
+          <input type="number" id="pPrecioVenta" min="0" step="0.01" required />
+        </label>
+        <label>Stock actual
+          <input type="number" id="pStock" min="0" required />
+        </label>
+        <label>Stock mínimo
+          <input type="number" id="pStockMin" min="0" value="0" required />
+        </label>
+        <label>Imagen URL
+          <input type="url" id="pImagen" placeholder="https://..." />
+        </label>
+      </div>
+      <menu>
+        <button value="cancel">Cancelar</button>
+        <button id="btnGuardarProducto" class="primary" value="default">Guardar</button>
+      </menu>
+      <input type="hidden" id="pId" />
+    </form>
+  </dialog>
+
+  <!-- Modal Cliente -->
+  <dialog id="modalCliente">
+    <form method="dialog" class="modal-form" id="formCliente">
+      <h3>Cliente</h3>
+      <div class="grid">
+        <label>Nombre
+          <input type="text" id="cNombre" required />
+        </label>
+        <label>Teléfono
+          <input type="text" id="cTelefono" />
+        </label>
+      </div>
+      <menu>
+        <button value="cancel">Cancelar</button>
+        <button id="btnGuardarCliente" class="primary" value="default">Guardar</button>
+      </menu>
+      <input type="hidden" id="cId" />
+    </form>
+  </dialog>
+
+  <!-- Modal Historial Cliente -->
+  <dialog id="modalHistorial">
+    <div class="modal-form">
+      <h3>Historial de compras</h3>
+      <div class="table-wrap">
+        <table class="table" id="tablaHistorial">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Detalle</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <menu>
+        <button id="btnCerrarHistorial">Cerrar</button>
+      </menu>
+    </div>
+  </dialog>
+
+  <!-- Modal Ticket -->
+  <dialog id="modalTicket">
+    <div class="ticket" id="ticket"></div>
+    <menu>
+      <button id="btnImprimirTicket" class="secondary">Imprimir / Guardar PDF</button>
+      <button id="btnCerrarTicket">Cerrar</button>
+    </menu>
+  </dialog>
+
+  <!-- Modal Venta Rápida -->
+  <dialog id="modalRapida">
+    <form method="dialog" class="modal-form" id="formRapida">
+      <h3>Venta rápida</h3>
+      <div class="grid">
+        <label>Buscar producto
+          <input id="rapidaBuscar" type="text" placeholder="Descripción o código" />
+          <div id="rapidaSugs" class="sugerencias" style="position:static; display:block;"></div>
+        </label>
+        <label>Cantidad
+          <input id="rapidaCant" type="number" min="1" value="1" />
+        </label>
+        <label>Cliente
+          <select id="rapidaCliente"></select>
+        </label>
+        <label>Cajero
+          <select id="rapidaCajero"></select>
+        </label>
+      </div>
+      <menu>
+        <button value="cancel">Cancelar</button>
+        <button id="btnConfirmarRapida" class="success" value="default">Confirmar</button>
+      </menu>
+      <input type="hidden" id="rapidaPid" />
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <small>programado por @patricio_giussani_</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
