@@ -1,6 +1,10 @@
-// ====== Persistencia ======
-const STORAGE_KEY = 'posDataV3';
+// ====== Firebase ======
+const { auth, db } = window.firebase;
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } 
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+// ====== Estado ======
 const state = {
   productos: [],
   clientes: [],
@@ -9,22 +13,64 @@ const state = {
   cart: []
 };
 
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    try {
-      const data = JSON.parse(raw);
-      Object.assign(state, data);
-    } catch (e) { console.error('Error al parsear almacenamiento', e); }
-  }
-  // Asegurar cliente "Mostrador"
-  if (!state.clientes.length || !state.clientes.find(c => c.nombre === 'Mostrador')) {
-    if (!state.clientes.find(c => c.id === 'mostrador')) {
-      state.clientes.unshift({ id: 'mostrador', nombre: 'Mostrador', telefono: '' });
-    }
+// ====== Persistencia en Firestore ======
+async function saveState() {
+  const user = auth.currentUser;
+  if (!user) return;
+  await setDoc(doc(db, "usuarios", user.uid), state);
+}
+
+async function loadState() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const snap = await getDoc(doc(db, "usuarios", user.uid));
+  if (snap.exists()) Object.assign(state, snap.data());
+
+  if (!state.clientes.length || !state.clientes.find(c => c.id === 'mostrador')) {
+    state.clientes.unshift({ id: 'mostrador', nombre: 'Mostrador', telefono: '' });
   }
 }
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+// ====== Login ======
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const btnLogin = document.getElementById("btnLogin");
+const btnRegister = document.getElementById("btnRegister");
+
+btnRegister.onclick = () => {
+  createUserWithEmailAndPassword(auth, email.value, password.value)
+    .then(() => alert("Usuario creado"))
+    .catch(err => alert(err.message));
+};
+
+btnLogin.onclick = () => {
+  signInWithEmailAndPassword(auth, email.value, password.value)
+    .then(() => { alert("Sesión iniciada"); loadState(); hydrate(); })
+    .catch(err => alert(err.message));
+};
+
+// ====== Mostrar/Ocultar app ======
+onAuthStateChanged(auth, (user) => {
+  const login = document.getElementById("login");
+  const main = document.querySelector("main.content");
+  const sidebar = document.querySelector(".sidebar");
+
+  if (user) {
+    login.style.display = "none";
+    main.style.display = "";
+    sidebar.style.display = "";
+    loadState().then(hydrate);
+  } else {
+    login.style.display = "flex";
+    main.style.display = "none";
+    sidebar.style.display = "none";
+  }
+});
+
+// ====== Resto de tu código ======
+// 👉 acá mantenés todo igual: funciones de productos, clientes, ventas, reportes, dashboard, etc.
+// solo asegurate que usen saveState() en lugar de localStorage.setItem.
+
 
 // ====== Utilidades ======
 const $ = sel => document.querySelector(sel);

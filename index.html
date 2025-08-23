@@ -7,8 +7,26 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="dark">
+
+  <!-- 🔹 Pantalla de Login -->
+  <div id="login">
+    <div class="panel" style="max-width:400px; margin:60px auto;">
+      <h2 style="text-align:center;">Acceder</h2>
+      <label>Correo
+        <input id="email" type="email" placeholder="Correo" />
+      </label>
+      <label>Contraseña
+        <input id="password" type="password" placeholder="Contraseña" />
+      </label>
+      <div class="row gap" style="margin-top:12px;">
+        <button id="btnLogin" class="primary flex1">Iniciar sesión</button>
+        <button id="btnRegister" class="secondary flex1">Registrarse</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 App principal -->
   <div class="app">
-    <!-- Sidebar / Topbar -->
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="logo-placeholder" title="Colocá aquí tu logo">LOGO</div>
@@ -24,6 +42,8 @@
       </nav>
       <button id="btnToggleTheme" class="secondary" style="margin-top:20px;">🌓 Cambiar tema</button>
     </aside>
+
+
 
     <main class="content">
       <!-- Dashboard -->
@@ -396,6 +416,31 @@
     <small>programado por @patricio_giussani_</small>
   </footer>
 
-  <script src="script.js"></script>
+  <!-- 🔹 Firebase config -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBmtJytEatLYvaDx-D5USbZeMZPTbprhtE",
+    authDomain: "pos-flicka.firebaseapp.com",
+    projectId: "pos-flicka",
+    storageBucket: "pos-flicka.firebasestorage.app",
+    messagingSenderId: "1082604898855",
+    appId: "1:1082604898855:web:30621f071272c8ad191c02"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Hacerlos accesibles globalmente
+    window.firebase = { app, auth, db };
+  </script>
+
+  <!-- 🔹 Script principal -->
+  <script src="script.js" type="module"></script>
 </body>
 </html>

@@ -8,6 +8,13 @@ body {
   color: #e2e8f0; /* slate-200 */
 }
 
+#login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* ocupa toda la altura */
+}
+
 /* ====== Layout ====== */
 .app { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
 .sidebar {
