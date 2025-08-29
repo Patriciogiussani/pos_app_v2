@@ -4,6 +4,8 @@ import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } 
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+
+
 // ====== Estado ======
 const state = {
   productos: [],
@@ -55,12 +57,14 @@ onAuthStateChanged(auth, (user) => {
   const main = document.querySelector("main.content");
   const sidebar = document.querySelector(".sidebar");
 
-  if (user) {
+ if (user) {
+    // 🔹 ahora sí, mostrar la app al iniciar sesión
     login.style.display = "none";
     main.style.display = "";
     sidebar.style.display = "";
     loadState().then(hydrate);
   } else {
+    // 🔹 si no hay usuario, mostrar login
     login.style.display = "flex";
     main.style.display = "none";
     sidebar.style.display = "none";
@@ -381,6 +385,12 @@ function bindVentas() {
   buscador.addEventListener('input', ()=> showSugs(buscarProductos(buscador.value)));
   buscador.addEventListener('focus', ()=> showSugs(buscarProductos(buscador.value)));
   document.addEventListener('click', (e)=> { if (!sug.contains(e.target) && e.target!==buscador) sug.style.display='none'; });
+  // Mostrar/ocultar datos de transferencia
+$('#metodoPago').addEventListener('change', () => {
+  const metodo = $('#metodoPago').value;
+  $('#datosTransferencia').classList.toggle('hidden', metodo !== 'transferencia');
+});
+
 
   $('#btnAgregarCarrito').addEventListener('click', ()=> {
     const pid = buscador.dataset.pid;
@@ -428,14 +438,22 @@ function confirmarVenta() {
   const vuelto = Math.max(entregado - total, 0);
   const clienteId = $('#clienteVenta').value;
   const cajero = $('#cajeroVenta').value || (state.settings.cajeros[0] || 'Caja 1');
-  const venta = {
-    id: uid('venta'),
-    fecha: new Date().toISOString(),
-    clienteId,
-    cajero,
-    items: state.cart.map(it => ({ productoId: it.productoId, descripcion: it.descripcion, precio: it.precio, cantidad: it.cantidad })),
-    total, entregado, vuelto
-  };
+  const metodoPago = $('#metodoPago').value;
+const titularCuenta = $('#titularCuenta').value.trim();
+const numeroOperacion = $('#numeroOperacion').value.trim();
+
+const venta = {
+  id: uid('venta'),
+  fecha: new Date().toISOString(),
+  clienteId,
+  cajero,
+  items: state.cart.map(it => ({ productoId: it.productoId, descripcion: it.descripcion, precio: it.precio, cantidad: it.cantidad })),
+  total, entregado, vuelto,
+  metodoPago,
+  titularCuenta: metodoPago === 'transferencia' ? titularCuenta : '',
+  numeroOperacion: metodoPago === 'transferencia' ? numeroOperacion : ''
+};
+
   state.ventas.unshift(venta);
   state.cart = [];
   saveState();
@@ -475,6 +493,12 @@ function openTicket(venta) {
     <div><strong>Cliente:</strong> ${cliente}</div>
     <div><strong>Cajero:</strong> ${venta.cajero || '-'}</div>
     <hr/>
+    <div><strong>Método de pago:</strong> ${venta.metodoPago}</div>
+${venta.metodoPago === 'transferencia' ? `
+  <div><strong>Titular:</strong> ${venta.titularCuenta || '-'}</div>
+  <div><strong>N° Operación:</strong> ${venta.numeroOperacion || '-'}</div>
+` : ''}
+
     <table>
       <thead><tr><th>Detalle</th><th class="right">Importe</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -768,6 +792,16 @@ function bindConfig() {
     saveState(); fillCajeros(); updateCajerosList();
     $('#nuevoCajero2').value='';
   });
+
+  // botón de logout
+$('#btnLogout').addEventListener('click', () => {
+  auth.signOut()
+    .then(() => {
+      alert("Sesión cerrada");
+      location.reload();
+    })
+    .catch(err => alert("Error al cerrar sesión: " + err.message));
+});
 }
 
 function fillCajeros() {
@@ -859,8 +893,8 @@ function bindThemeToggle() {
   });
 }
 
-window.addEventListener('DOMContentLoaded', ()=> {
-  loadState();
+window.addEventListener('DOMContentLoaded', async ()=> {
+  await 
   bindNav();
   bindProductos();
   bindClientes();
@@ -869,6 +903,6 @@ window.addEventListener('DOMContentLoaded', ()=> {
   bindConfig();
   bindThemeToggle();
   bindVentaRapida();
-  hydrate();
+ 
 });
 

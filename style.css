@@ -224,3 +224,4 @@ body.light select {
   color: #111827;
   border-color: #d1d5db;
 }
+#datosTransferencia.hidden { display: none; }

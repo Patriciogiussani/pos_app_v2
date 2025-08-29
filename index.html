@@ -181,6 +181,21 @@
                 <span>Vuelto:</span>
                 <strong id="vuelto">$0.00</strong>
               </div>
+              <label>Método de pago</label>
+<select id="metodoPago">
+  <option value="efectivo">Efectivo / Contado</option>
+  <option value="transferencia">Transferencia</option>
+</select>
+
+<div id="datosTransferencia" class="hidden">
+  <label>Titular de la cuenta (opcional)
+    <input id="titularCuenta" type="text" />
+  </label>
+  <label>Número de operación (opcional)
+    <input id="numeroOperacion" type="text" />
+  </label>
+</div>
+
               <button id="btnConfirmarVenta" class="success">Confirmar venta</button>
             </div>
           </div>
@@ -287,6 +302,12 @@
             </div>
           </div>
 
+          <div class="panel">
+  <p><strong>Sesión</strong></p>
+  <button id="btnLogout" class="secondary">Cerrar sesión</button>
+</div>
+
+
           <div class="panel danger">
             <p><strong>Reset total</strong> (borra LocalStorage)</p>
             <button id="btnReset" class="danger">Borrar todo</button>
@@ -384,7 +405,7 @@
       <button id="btnCerrarTicket">Cerrar</button>
     </menu>
   </dialog>
-
+  
   <!-- Modal Venta Rápida -->
   <dialog id="modalRapida">
     <form method="dialog" class="modal-form" id="formRapida">
@@ -427,7 +448,7 @@
     apiKey: "AIzaSyBmtJytEatLYvaDx-D5USbZeMZPTbprhtE",
     authDomain: "pos-flicka.firebaseapp.com",
     projectId: "pos-flicka",
-    storageBucket: "pos-flicka.firebasestorage.app",
+   storageBucket: "pos-flicka.appspot.com",
     messagingSenderId: "1082604898855",
     appId: "1:1082604898855:web:30621f071272c8ad191c02"
   };
