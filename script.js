@@ -385,11 +385,33 @@ function bindVentas() {
   buscador.addEventListener('input', ()=> showSugs(buscarProductos(buscador.value)));
   buscador.addEventListener('focus', ()=> showSugs(buscarProductos(buscador.value)));
   document.addEventListener('click', (e)=> { if (!sug.contains(e.target) && e.target!==buscador) sug.style.display='none'; });
-  // Mostrar/ocultar datos de transferencia
-$('#metodoPago').addEventListener('change', () => {
+// Mostrar/ocultar datos según método de pago
+function togglePagoDetalles() {
   const metodo = $('#metodoPago').value;
   $('#datosTransferencia').classList.toggle('hidden', metodo !== 'transferencia');
+  $('#datosDebito').classList.toggle('hidden', metodo !== 'debito');
+  $('#datosCredito').classList.toggle('hidden', metodo !== 'credito');
+  $('#datosAlimentar').classList.toggle('hidden', metodo !== 'alimentar');
+}
+
+// (opcional) Autocompletar "monto entregado" con el total cuando NO es efectivo
+function autofillMontoNoEfectivo() {
+  const metodo = $('#metodoPago').value;
+  if (metodo !== 'efectivo') {
+    const total = state.cart.reduce((acc, it)=> acc + it.precio*it.cantidad, 0);
+    $('#montoEntregado').value = String(total);
+    renderCarrito();
+  }
+}
+
+$('#metodoPago').addEventListener('change', () => {
+  togglePagoDetalles();
+  autofillMontoNoEfectivo(); // opcional
 });
+
+// Llamar una vez al entrar a la pantalla (o tras hidratar)
+togglePagoDetalles();
+
 
 
   $('#btnAgregarCarrito').addEventListener('click', ()=> {
@@ -483,10 +505,42 @@ function openTicket(venta) {
   const t = $('#ticket');
   const store = state.settings.storeName || 'Mi Almacén';
   const fecha = new Date(venta.fecha);
-  const cliente = state.clientes.find(c=>c.id===venta.clienteId)?.nombre || 'Mostrador';
+  const cliente = state.clientes.find(c => c.id === venta.clienteId)?.nombre || 'Mostrador';
   const rows = venta.items.map(it => `
-    <tr><td>${it.descripcion} x${it.cantidad}</td><td class="right">${formatCurrency(it.precio*it.cantidad)}</td></tr>
+    <tr><td>${it.descripcion} x${it.cantidad}</td><td class="right">${formatCurrency(it.precio * it.cantidad)}</td></tr>
   `).join('');
+
+  // --- AÑADIDO: detallePago y HTML extra según método ---
+  const dp = venta.detallePago || null;
+  let pagoExtraHTML = '';
+
+  if (venta.metodoPago === 'transferencia') {
+    const tit = (dp?.titular ?? venta.titularCuenta) || '-';
+    const op  = (dp?.operacion ?? venta.numeroOperacion) || '-';
+    pagoExtraHTML = `
+      <div><strong>Titular:</strong> ${tit}</div>
+      <div><strong>N° Operación:</strong> ${op}</div>
+    `;
+  } else if (dp?.tipo === 'debito') {
+    pagoExtraHTML = `
+      <div><strong>Tarjeta:</strong> ${dp.marca || '-'} ${dp.ultimos4 ? '• **** ' + dp.ultimos4 : ''}</div>
+      <div><strong>Titular:</strong> ${dp.titular || '-'}</div>
+      <div><strong>Autorización:</strong> ${dp.autorizacion || '-'}</div>
+    `;
+  } else if (dp?.tipo === 'credito') {
+    pagoExtraHTML = `
+      <div><strong>Tarjeta:</strong> ${dp.marca || '-'} ${dp.ultimos4 ? '• **** ' + dp.ultimos4 : ''}</div>
+      <div><strong>Titular:</strong> ${dp.titular || '-'}</div>
+      <div><strong>Cuotas:</strong> ${dp.cuotas || '-'}</div>
+      <div><strong>Autorización:</strong> ${dp.autorizacion || '-'}</div>
+    `;
+  } else if (dp?.tipo === 'alimentar') {
+    pagoExtraHTML = `
+      <div><strong>Titular:</strong> ${dp.titular || '-'}</div>
+    `;
+  }
+  // --- FIN AÑADIDO ----------------------------------------
+
   t.innerHTML = `
     <h4>${store}</h4>
     <small>${fecha.toLocaleString('es-AR')}</small>
@@ -498,6 +552,8 @@ ${venta.metodoPago === 'transferencia' ? `
   <div><strong>Titular:</strong> ${venta.titularCuenta || '-'}</div>
   <div><strong>N° Operación:</strong> ${venta.numeroOperacion || '-'}</div>
 ` : ''}
+
+    ${pagoExtraHTML}
 
     <table>
       <thead><tr><th>Detalle</th><th class="right">Importe</th></tr></thead>
@@ -514,13 +570,14 @@ ${venta.metodoPago === 'transferencia' ? `
 
   $('#btnImprimirTicket').onclick = () => {
     const w = window.open('', '_blank', 'width=360,height=600');
-    w.document.write('<html><head><title>Ticket</title></head><body>'+t.outerHTML+'</body></html>');
+    w.document.write('<html><head><title>Ticket</title></head><body>' + t.outerHTML + '</body></html>');
     w.document.close();
     w.focus();
     w.print();
   };
   $('#btnCerrarTicket').onclick = () => dlg.close();
 }
+
 
 // ====== Reportes ======
 function filtrarVentasPorFecha(desde, hasta) {
@@ -831,6 +888,13 @@ function bindVentaRapida() {
     dlg.showModal();
   });
 
+  // Mostrar/ocultar campos de transferencia en Venta Rápida
+$('#rapidaMetodoPago').addEventListener('change', () => {
+  const metodo = $('#rapidaMetodoPago').value;
+  $('#rapidaDatosTransferencia').classList.toggle('hidden', metodo !== 'transferencia');
+});
+
+
   const inp = $('#rapidaBuscar');
   const sugs = $('#rapidaSugs');
   function show(list) {
@@ -857,16 +921,32 @@ function bindVentaRapida() {
     if (p.stock < qty) { alert('No hay suficiente stock'); return; }
     // generar venta directa (cliente y cajero seleccionados)
     p.stock -= qty;
-    const venta = {
-      id: uid('venta'),
-      fecha: new Date().toISOString(),
-      clienteId: $('#rapidaCliente').value,
-      cajero: $('#rapidaCajero').value || (state.settings.cajeros[0] || 'Caja 1'),
-      items: [{ productoId: p.id, descripcion: p.descripcion, precio: p.precioVenta, cantidad: qty }],
-      total: p.precioVenta * qty,
-      entregado: p.precioVenta * qty,
-      vuelto: 0
-    };
+    const metodoPago = $('#rapidaMetodoPago').value;
+
+let detallePago = null;
+if (metodoPago === 'transferencia') {
+  detallePago = {
+    tipo: 'transferencia',
+    titular: $('#rapidaTitularCuenta').value.trim(),
+    operacion: $('#rapidaNumeroOperacion').value.trim()
+  };
+}
+
+const venta = {
+  id: uid('venta'),
+  fecha: new Date().toISOString(),
+  clienteId: $('#rapidaCliente').value,
+  cajero: $('#rapidaCajero').value || (state.settings.cajeros[0] || 'Caja 1'),
+  items: [{ productoId: p.id, descripcion: p.descripcion, precio: p.precioVenta, cantidad: qty }],
+  total: p.precioVenta * qty,
+  entregado: p.precioVenta * qty,
+  vuelto: 0,
+  metodoPago,
+  titularCuenta: (metodoPago === 'transferencia') ? $('#rapidaTitularCuenta').value.trim() : '',
+  numeroOperacion: (metodoPago === 'transferencia') ? $('#rapidaNumeroOperacion').value.trim() : '',
+  detallePago
+};
+
     state.ventas.unshift(venta);
     saveState();
     renderProductos(); renderReportes(); renderDashboard();

@@ -181,12 +181,16 @@
                 <span>Vuelto:</span>
                 <strong id="vuelto">$0.00</strong>
               </div>
-              <label>Método de pago</label>
+           <label>Método de pago</label>
 <select id="metodoPago">
   <option value="efectivo">Efectivo / Contado</option>
   <option value="transferencia">Transferencia</option>
+  <option value="debito">Tarjeta de débito</option>
+  <option value="credito">Tarjeta de crédito</option>
+  <option value="alimentar">Tarjeta Alimentar</option>
 </select>
 
+<!-- Transferencia -->
 <div id="datosTransferencia" class="hidden">
   <label>Titular de la cuenta (opcional)
     <input id="titularCuenta" type="text" />
@@ -196,7 +200,68 @@
   </label>
 </div>
 
-              <button id="btnConfirmarVenta" class="success">Confirmar venta</button>
+<!-- Débito -->
+<div id="datosDebito" class="hidden">
+  <label>Titular (opcional)
+    <input id="debitoTitular" type="text" />
+  </label>
+  <label>Marca (opcional)
+    <select id="debitoMarca">
+      <option value="">—</option>
+      <option>Visa</option>
+      <option>Mastercard</option>
+      <option>Maestro</option>
+      <option>Cabal</option>
+    </select>
+  </label>
+  <label>Últimos 4 dígitos (opcional)
+    <input id="debitoUltimos4" type="text" inputmode="numeric" maxlength="4" />
+  </label>
+  <label>Cód. autorización / voucher (opcional)
+    <input id="debitoAutorizacion" type="text" />
+  </label>
+</div>
+
+<!-- Crédito -->
+<div id="datosCredito" class="hidden">
+  <label>Titular (opcional)
+    <input id="creditoTitular" type="text" />
+  </label>
+  <label>Marca (opcional)
+    <select id="creditoMarca">
+      <option value="">—</option>
+      <option>Visa</option>
+      <option>Mastercard</option>
+      <option>Amex</option>
+      <option>Cabal</option>
+    </select>
+  </label>
+  <label>Últimos 4 dígitos (opcional)
+    <input id="creditoUltimos4" type="text" inputmode="numeric" maxlength="4" />
+  </label>
+  <label>Cuotas (opcional)
+    <select id="creditoCuotas">
+      <option value="">—</option>
+      <option>1</option>
+      <option>3</option>
+      <option>6</option>
+      <option>12</option>
+    </select>
+  </label>
+  <label>Cód. autorización / voucher (opcional)
+    <input id="creditoAutorizacion" type="text" />
+  </label>
+</div>
+
+<!-- Tarjeta Alimentar -->
+<div id="datosAlimentar" class="hidden">
+  <label>Titular (opcional)
+    <input id="alimentarTitular" type="text" />
+  </label>
+</div>
+
+<button id="btnConfirmarVenta" class="success">Confirmar venta</button>
+
             </div>
           </div>
         </div>
@@ -425,6 +490,21 @@
           <select id="rapidaCajero"></select>
         </label>
       </div>
+      <label>Método de pago</label>
+<select id="rapidaMetodoPago">
+  <option value="efectivo">Efectivo / Contado</option>
+  <option value="transferencia">Transferencia</option>
+</select>
+
+<div id="rapidaDatosTransferencia" class="hidden">
+  <label>Titular de la cuenta (opcional)
+    <input id="rapidaTitularCuenta" type="text" />
+  </label>
+  <label>Número de operación (opcional)
+    <input id="rapidaNumeroOperacion" type="text" />
+  </label>
+</div>
+
       <menu>
         <button value="cancel">Cancelar</button>
         <button id="btnConfirmarRapida" class="success" value="default">Confirmar</button>
